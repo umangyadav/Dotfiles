@@ -1,0 +1,47 @@
+version: "3.4"
+services:
+  mlir_dev:
+    # Your Dockerfile location
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        MUID: "${UID}"
+        MGID: "${UID}"
+        USERNAME: "${USER}"
+        LLVM_VER: "20"
+    image: "${USER}/mlir-dev"
+    cpuset: "0-127"
+    cap_add:
+      - SYS_PTRACE
+    group_add:
+      - 44
+      - 109
+    container_name: "${USER}-mlir-dev"
+    environment:
+      - ROCR_VISIBLE_DEVICES=0
+    # Using Share the GPU resources on the same node for shared GPUs (edit: not so much, it breaks things)
+    devices:
+      - /dev/kfd
+      - /dev/dri
+    network_mode: "host"
+    security_opt:
+      - "seccomp=unconfined"
+    tmpfs: # Remove this section if you don't use VS code
+      - "${HOME}/.vscode-server:exec,uid=${UID},gid=${UID}"
+    volumes:
+      - type: bind
+        source: "${HOME}"
+        target: "${HOME}"
+      #- type: bind
+      #  source: "/mnt/nas_share"
+      #  target: "/mnt/nas_share"
+      #- type: bind  
+      #  source: "/mnt/sc_nas_share"
+      #  target: "/mnt/sc_nas_share"
+      # include everything below only on lockhart nodes or other places where /home is slow
+      - "local-files:/var/${USER}"
+
+volumes:
+  local-files:
+

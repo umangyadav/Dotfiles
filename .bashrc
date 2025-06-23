@@ -130,6 +130,6 @@ fi
 unset color_prompt force_color_prompt
 alias m="make -j$(nproc)"
 alias python='python3'
-alias dr='docker run -v $HOME:$HOME -v $HOME/.ssh:/root/.ssh --device=/dev/kfd --device=/dev/dri -e HOME=/home/umayadav -w /home/umayadav/repo/AMDMIGraphX -it'
-alias dr_numa='docker run -v $HOME:$HOME --device=/dev/kfd --device=/dev/dri --cpuset-cpus=64-127 -e ROCR_VISIBLE_DEVICES=0 -e HOME=/home/umayadav -w /home/umayadav/repo/AMDMIGraphX -it'
-alias dr_m='docker run -it -v $HOME:$HOME --privileged --device=/dev/kfd --device /dev/dri:/dev/dri:rw  --volume /dev/dri:/dev/dri:rw -v /var/lib/docker/:/var/lib/docker -e HOME=/home/umayadav -w /home/umayadav/repo/AMDMIGraphX --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined'
+alias dr='docker run -v $HOME:$HOME -v $HOME/.ssh:/root/.ssh --device=/dev/kfd --device=/dev/dri -e HOME=/home/umayadav -w /home/umayadav/repo/rocMLIR -it'
+alias dr_numa='docker run -v $HOME:$HOME --device=/dev/kfd --device=/dev/dri --cpuset-cpus=64-127 -e ROCR_VISIBLE_DEVICES=0 -e HOME=/home/umayadav -w /home/umayadav/repo/rocMLIR -it'
+alias dr_m='docker run -it -v $HOME:$HOME --privileged --device=/dev/kfd --device /dev/dri:/dev/dri:rw  --volume /dev/dri:/dev/dri:rw -v /var/lib/docker/:/var/lib/docker -e HOME=/home/umayadav -w /home/umayadav/repo/rocMLIR --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined'
