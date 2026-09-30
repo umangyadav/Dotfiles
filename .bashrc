@@ -130,6 +130,33 @@ fi
 unset color_prompt force_color_prompt
 alias m="make -j$(nproc)"
 alias python='python3'
-alias dr='docker run -v $HOME:$HOME -v $HOME/.ssh:/root/.ssh --device=/dev/kfd --device=/dev/dri -e HOME=/home/umayadav -w /home/umayadav/repo/rocMLIR -it'
-alias dr_numa='docker run -v $HOME:$HOME --device=/dev/kfd --device=/dev/dri --cpuset-cpus=64-127 -e ROCR_VISIBLE_DEVICES=0 -e HOME=/home/umayadav -w /home/umayadav/repo/rocMLIR -it'
-alias dr_m='docker run -it -v $HOME:$HOME --privileged --device=/dev/kfd --device /dev/dri:/dev/dri:rw  --volume /dev/dri:/dev/dri:rw -v /var/lib/docker/:/var/lib/docker -e HOME=/home/umayadav -w /home/umayadav/repo/rocMLIR --group-add video --cap-add=SYS_PTRACE --security-opt seccomp=unconfined'
+dr() {
+  local uid gid passwd group
+  uid=$(id -u)
+  gid=$(id -g)
+  passwd="$HOME/.docker-passwd"
+  group="$HOME/.docker-group"
+
+  cp /etc/passwd "$passwd"
+  getent passwd "$uid" >> "$passwd"
+
+  cp /etc/group "$group"
+  getent group "$gid" >> "$group" \
+    || printf 'hostgroup:x:%s:\n' "$gid" >> "$group"
+
+  docker run --user "${uid}:${gid}" \
+    -v "$passwd:/etc/passwd:ro" \
+    -v "$group:/etc/group:ro" \
+    -v "$HOME:$HOME" \
+    -v "$HOME/.ssh:$HOME/.ssh:ro" \
+    --device=/dev/kfd \
+    --device=/dev/dri \
+    --cap-add=SYS_PTRACE \
+    --group-add=video \
+    --group-add=render \
+    --security-opt seccomp=unconfined \
+    -e HOME="$HOME" \
+    -w "$HOME/repo" \
+    -it \
+    "$@"
+}
