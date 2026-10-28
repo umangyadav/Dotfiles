@@ -131,11 +131,17 @@ unset color_prompt force_color_prompt
 alias m="make -j$(nproc)"
 alias python='python3'
 dr() {
-  local uid gid passwd group
+  local uid gid passwd group cert cid
   uid=$(id -u)
   gid=$(id -g)
   passwd="$HOME/.docker-passwd"
   group="$HOME/.docker-group"
+  cert="/usr/local/share/ca-certificates/AMD_CA.crt"
+
+  if [[ ! -f "$cert" ]]; then
+    printf 'Certificate not found on SSH host: %s\n' "$cert" >&2
+    return 1
+  fi
 
   cp /etc/passwd "$passwd"
   getent passwd "$uid" >> "$passwd"
@@ -144,19 +150,33 @@ dr() {
   getent group "$gid" >> "$group" \
     || printf 'hostgroup:x:%s:\n' "$gid" >> "$group"
 
-  docker run --user "${uid}:${gid}" \
+  # Run as the host user; keep the container alive in the background.
+  cid=$(docker run -d --user "${uid}:${gid}" \
     -v "$passwd:/etc/passwd:ro" \
     -v "$group:/etc/group:ro" \
     -v "$HOME:$HOME" \
     -v "$HOME/.ssh:$HOME/.ssh:ro" \
+    -v /data/umayadav:/data/umayadav \
+    --mount "type=bind,source=$cert,target=$cert,readonly" \
     --device=/dev/kfd \
     --device=/dev/dri \
     --cap-add=SYS_PTRACE \
-    --group-add=video \
-    --group-add=render \
+    --group-add="$(getent group video | cut -d: -f3)" \
+    --group-add="$(getent group render | cut -d: -f3)" \
     --security-opt seccomp=unconfined \
     -e HOME="$HOME" \
+    -e NODE_EXTRA_CA_CERTS="$cert" \
     -w "$HOME/repo" \
-    -it \
-    "$@"
+    "$@" sleep infinity) || return 1
+
+  # Grant passwordless sudo to the host user inside the container.
+  docker exec -u root "$cid" sh -c \
+    "echo '#${uid} ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/hostuser \
+     && chmod 0440 /etc/sudoers.d/hostuser"
+
+  echo "Container: $cid  (stop with: docker rm -f $cid)"
+  docker exec -it "$cid" bash
 }
+
+export PATH="$HOME/.local/bin:$PATH"
+export NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/AMD_CA.crt
